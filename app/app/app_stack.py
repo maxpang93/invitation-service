@@ -11,6 +11,10 @@ from aws_cdk import (
     aws_events_targets as events_targets_,
 )
 from aws_cdk.aws_apigatewayv2_integrations import HttpLambdaIntegration
+from aws_cdk.aws_apigatewayv2_authorizers import (
+    HttpLambdaAuthorizer,
+    HttpLambdaResponseType,
+)
 from constructs import Construct
 from dotenv import load_dotenv
 
@@ -20,6 +24,7 @@ print(os.environ)
 
 TABLE_NAME = os.environ["TABLE_NAME"]
 TABLE_GSI_NAME = os.environ["TABLE_GSI_NAME"]
+ADMIN_API_KEY = os.environ["ADMIN_API_KEY"]
 
 
 class AppStack(Stack):
@@ -89,13 +94,43 @@ class AppStack(Stack):
             handler=invitation_fn,
         )
 
+        # custom Lambda authorizer for invitation endpoints
+        api_key_authorizer_fn = lambda_.Function(
+            self,
+            id="ApiKeyAuthorizerFn",
+            function_name="ApiKeyAuthorizer",
+            runtime=lambda_.Runtime.PYTHON_3_10,
+            code=lambda_.Code.from_asset("lambdas/api_key_authorizer"),
+            handler="index.handler",
+            memory_size=256,
+            timeout=Duration.seconds(60),
+            environment={
+                "ADMIN_API_KEY": ADMIN_API_KEY,
+            },
+        )
+        api_key_authorizer = HttpLambdaAuthorizer(
+            id="ApiKeyAuthorizer",
+            handler=api_key_authorizer_fn,
+            response_types=[HttpLambdaResponseType.SIMPLE],
+        )
+
+        # public endpoints
+        http_api.add_routes(
+            path="/invitation",
+            methods=[
+                apigw_.HttpMethod.PUT,
+            ],
+            integration=invitation_integration,
+        )
+
+        # protected endpoints
         http_api.add_routes(
             path="/invitation",
             methods=[
                 apigw_.HttpMethod.GET,
                 apigw_.HttpMethod.POST,
-                apigw_.HttpMethod.PUT,
                 apigw_.HttpMethod.DELETE,
             ],
             integration=invitation_integration,
+            authorizer=api_key_authorizer,
         )
