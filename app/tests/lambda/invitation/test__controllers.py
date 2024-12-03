@@ -2,13 +2,13 @@ import json
 
 import pytest
 
-from lambdas.invitation.index import (
+from lambdas.invitation.helpers.controllers import (
     create_new_invitation,
     confirm_invitation,
     review_all_invitations,
     # invalidate_invitation,
 )
-from lambdas.invitation.schemas import InvitationStatus
+from lambdas.invitation.helpers.schemas import InvitationStatus
 
 
 @pytest.mark.parametrize(

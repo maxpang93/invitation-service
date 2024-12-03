@@ -2,18 +2,18 @@ import os
 
 import pytest
 
-from lambdas.invitation.queries import (
+from lambdas.invitation.helpers.queries import (
     get_all,
     create,
     update,
     query,
     query_by_gsi,
 )
-from lambdas.invitation.utils import (
+from lambdas.invitation.helpers.utils import (
     generate_invitation,
     generate_code,
 )
-from lambdas.invitation.schemas import InvitationStatus
+from lambdas.invitation.helpers.schemas import InvitationStatus
 
 
 def test_get_all_from_empty_table(empty_table):

@@ -6,8 +6,8 @@ import pytest
 import moto
 from dotenv import load_dotenv
 
-from lambdas.invitation.utils import generate_invitation
-from lambdas.invitation.schemas import Invitation, InvitationStatus
+from lambdas.invitation.helpers.utils import generate_invitation
+from lambdas.invitation.helpers.schemas import Invitation, InvitationStatus
 
 
 @pytest.fixture
