@@ -1,12 +1,12 @@
-import os
 from datetime import datetime, timezone, timedelta
+import os
 
 import boto3
 import pytest
 import moto
 from dotenv import load_dotenv
 
-from lambdas.invitation.helpers.utils import generate_invitation
+from lambdas.invitation.helpers.utils import generate_invitation, generate_code
 from lambdas.invitation.helpers.schemas import Invitation, InvitationStatus
 
 
@@ -108,3 +108,66 @@ def generate_expiry_date(days_before_now: int = 8) -> str:
     """
     expired_date = datetime.now(timezone.utc) - timedelta(days=days_before_now)
     return expired_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@pytest.fixture
+def table_with_many_items(create_table):
+    """
+    Tune numbers to ~10k to test
+    - pagination limit: able to get all items via multiple queries
+    - long execution time: > 30s
+    - possible API Gateway timeout: (see https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html#http-api-quotas)
+    """
+    UNCONFIRMED_BUT_EXPIRED_COUNT = 100
+    NEW_UNCONFIRMED_COUNT = 50
+    EXPIRED_COUNT = 50
+    CONFIRMED_COUNT = 50
+    INVALIDATED_COUNT = 50
+
+    # status 'unconfirmed' but expired invitations
+    for _ in range(UNCONFIRMED_BUT_EXPIRED_COUNT):
+        create_expired_invitation(create_table)
+
+    # new invitations
+    for _ in range(NEW_UNCONFIRMED_COUNT):
+        invitation = generate_invitation(
+            email=generate_random_email(),
+            code=generate_code(),
+        )
+        create_table.put_item(Item=invitation.__dict__)
+
+    # status 'expired' invitations
+    for _ in range(EXPIRED_COUNT):
+        create_expired_invitation(create_table, InvitationStatus.EXPIRED)
+
+    # other statuses
+    for _ in range(CONFIRMED_COUNT):
+        create_expired_invitation(create_table, InvitationStatus.CONFIRMED)
+
+    for _ in range(INVALIDATED_COUNT):
+        create_expired_invitation(create_table, InvitationStatus.INVALIDATED)
+
+    # set env var for test functions use
+    os.environ["UNCONFIRMED_BUT_EXPIRED_COUNT"] = str(UNCONFIRMED_BUT_EXPIRED_COUNT)
+    os.environ["NEW_UNCONFIRMED_COUNT"] = str(NEW_UNCONFIRMED_COUNT)
+    os.environ["EXPIRED_COUNT"] = str(EXPIRED_COUNT)
+    os.environ["CONFIRMED_COUNT"] = str(CONFIRMED_COUNT)
+    os.environ["INVALIDATED_COUNT"] = str(INVALIDATED_COUNT)
+
+    yield create_table
+
+
+def generate_random_email():
+    return f"{generate_code(6)}@gmail.com"
+
+
+def create_expired_invitation(create_table, invite_status: InvitationStatus = None):
+    """Create invitations way past expiry_date"""
+    invitation = generate_invitation(
+        email=generate_random_email(),
+        code=generate_code(),
+        valid_days=-8,
+    )
+    if invite_status:
+        invitation.invite_status = invite_status
+    create_table.put_item(Item=invitation.__dict__)
