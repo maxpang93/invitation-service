@@ -58,10 +58,27 @@ def query(table, email: str, code: str = None) -> list[Invitation]:
 
 
 def query_by_gsi(table, gsi_name: str, invite_status: str) -> list[Invitation]:
+    data = []
+    start_key = None
     try:
         expr = Key("invite_status").eq(invite_status)
-        resp = table.query(IndexName=gsi_name, KeyConditionExpression=expr)
-        return resp.get("Items", [])
+        resp = table.query(
+            IndexName=gsi_name,
+            KeyConditionExpression=expr,
+        )
+        data.extend(resp["Items"])
+        start_key = resp.get("LastEvaluatedKey")
+
+        while start_key:
+            resp = table.query(
+                IndexName=gsi_name,
+                KeyConditionExpression=expr,
+                ExclusiveStartKey=start_key,
+            )
+            data.extend(resp["Items"])
+            start_key = resp.get("LastEvaluatedKey")
+
+        return data
 
     except ClientError as e:
         print(f"Failed to query table. Err: {e}")
