@@ -3,6 +3,7 @@ import os
 from aws_cdk import (
     Duration,
     Stack,
+    BundlingOptions,
     # aws_sqs as sqs,
     aws_dynamodb as dynamodb_,
     aws_lambda as lambda_,
@@ -25,6 +26,7 @@ print(os.environ)
 TABLE_NAME = os.environ["TABLE_NAME"]
 TABLE_GSI_NAME = os.environ["TABLE_GSI_NAME"]
 ADMIN_API_KEY = os.environ["ADMIN_API_KEY"]
+CRON_DURATION_MINUTES = int(os.environ["CRON_DURATION_MINUTES"] or 60)
 
 
 class AppStack(Stack):
@@ -134,3 +136,38 @@ class AppStack(Stack):
             integration=invitation_integration,
             authorizer=api_key_authorizer,
         )
+
+        # cron job Lambda that converts expired invitation status
+        scheduler_fn = lambda_.Function(
+            self,
+            id="InvitationCronFn",
+            function_name="InvitationCronService",
+            runtime=lambda_.Runtime.PYTHON_3_10,
+            code=lambda_.Code.from_asset(
+                "lambdas/scheduler",
+                bundling=BundlingOptions(
+                    image=lambda_.Runtime.PYTHON_3_10.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        "pip install aioboto3 -t /asset-output && cp -r . /asset-output",
+                    ],
+                ),
+            ),
+            handler="index.handler",
+            memory_size=256,
+            timeout=Duration.seconds(60),
+            environment={
+                "TABLE_NAME": TABLE_NAME,
+                "TABLE_GSI_NAME": TABLE_GSI_NAME,
+            },
+        )
+        invitation_table.grant_read_write_data(scheduler_fn)
+        rule = events_.Rule(
+            self,
+            "InvitationCronServiceRule",
+            schedule=events_.Schedule.rate(
+                duration=Duration.minutes(CRON_DURATION_MINUTES)
+            ),
+        )
+        rule.add_target(target=events_targets_.LambdaFunction(scheduler_fn))
