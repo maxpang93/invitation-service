@@ -3,7 +3,6 @@ import os
 from aws_cdk import (
     Duration,
     Stack,
-    BundlingOptions,
     # aws_sqs as sqs,
     aws_dynamodb as dynamodb_,
     aws_lambda as lambda_,
@@ -143,17 +142,7 @@ class AppStack(Stack):
             id="InvitationCronFn",
             function_name="InvitationCronService",
             runtime=lambda_.Runtime.PYTHON_3_10,
-            code=lambda_.Code.from_asset(
-                "lambdas/scheduler",
-                bundling=BundlingOptions(
-                    image=lambda_.Runtime.PYTHON_3_10.bundling_image,
-                    command=[
-                        "bash",
-                        "-c",
-                        "pip install aioboto3 -t /asset-output && cp -r . /asset-output",
-                    ],
-                ),
-            ),
+            code=lambda_.Code.from_asset("lambdas/scheduler"),
             handler="index.handler",
             memory_size=256,
             timeout=Duration.seconds(60),
