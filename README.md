@@ -8,7 +8,9 @@ A simple serverless API Gateway App with AWS CDK for managing invitations.
 
 
 ## Architecture
-<diagram>
+<p align="left">
+  <img src="assets/Invitation-Service-Architecture.drawio.png" title="Invitation-Service-Architecture" hspace="50">
+</p>
 
 ## Pre-requisite
 1. Ensure CDK CLI is properly installed (refer [here](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)). Verify by running the command:
