@@ -87,15 +87,15 @@ def create_new_invitation(table, request_body: dict):
     print(f"new invitation data={data}")
 
     try:
-        new_invitation = create(table, data)
+        create_sucess = create(table, data)
         message = "Invitation created!"
         print(message)
 
         return build_response(
             status_code=200,
-            success=True,
+            success=create_sucess,
             message=message,
-            data=new_invitation,
+            data=data.__dict__,
         )
 
     except Exception as e:
@@ -187,7 +187,7 @@ def confirm_invitation(table, request_body: dict):
         )
 
 
-def invalidate_invitation(request_body: dict):
+def invalidate_invitation(table, request_body: dict):
     print(f"{request_body=}")
 
     return build_response(
