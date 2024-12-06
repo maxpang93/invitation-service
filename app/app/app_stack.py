@@ -3,7 +3,6 @@ import os
 from aws_cdk import (
     Duration,
     Stack,
-    # aws_sqs as sqs,
     aws_dynamodb as dynamodb_,
     aws_lambda as lambda_,
     aws_apigatewayv2 as apigw_,
@@ -31,14 +30,6 @@ CRON_DURATION_MINUTES = int(os.environ["CRON_DURATION_MINUTES"] or 60)
 class AppStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "AppQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
 
         # Table to store invitation info
         # with Secondary GSI for fast query on invite_status

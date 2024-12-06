@@ -202,5 +202,5 @@ def test_confirm_invitation(
         assert body["data"]["invite_status"] == invite_status
 
 
-# def test_invalid_http_method():
+# def test_invalidate_invitation():
 #     ...

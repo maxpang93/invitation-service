@@ -14,9 +14,6 @@ from helpers.utils import build_response
 
 TABLE_NAME = os.environ["TABLE_NAME"]
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(TABLE_NAME)
-
 
 def handler(event, context):
     print(event)
