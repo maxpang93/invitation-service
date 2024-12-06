@@ -34,8 +34,13 @@ def review_all_invitations(table, query_params: dict):
                 gsi_name=os.environ["TABLE_GSI_NAME"],
                 invite_status=invite_status,
             )
-            if email is not None:
-                data = [d for d in data if d["email"] == email]
+            if email or code:
+                data = [
+                    d
+                    for d in data
+                    if (d["email"] == email if email else True)
+                    and (d["code"] == code if code else True)
+                ]
         elif email is not None:
             # if email is supplied, but no filter by invite_status
             data = query(

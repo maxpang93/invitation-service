@@ -88,6 +88,15 @@ def test_create_new_invitation(
             },
             1,
         ),
+        # filter by status, email, code
+        (
+            {
+                "invite_status": "unconfirmed",
+                "email": "abc@gmail.com",
+                "code": "ABCD1234",
+            },
+            1,
+        ),
     ],
 )
 def test_review_all_invitations(
